@@ -72,18 +72,67 @@ public class HuffmanCoding {
      * Uses sortedCharFreqList to build a huffman coding tree, and stores its root
      * in huffmanRoot
      */
-    public void makeTree() {
-
-	/* Your code goes here */
-        Queue<TreeNode> src= new Queue<>(), dest = new Queue<TreeNode>();
-        int i = 0;
-        while (i < sortedCharFreqList.size()) {
-            CharFreq CharFreq = sortedCharFreqList.get(i);
-            src.enqueue(new TreeNode(CharFreq, null, null));
-            i++;
+    private static TreeNode dequeue_smallest(Queue<TreeNode> q1, Queue<TreeNode> q2){
+        TreeNode one = null;
+        TreeNode two = null;
+        if(!q1.isEmpty()){
+            one = q1.peek();
         }
+        if(!q2.isEmpty()){
+            two = q2.peek();
+        }
+        TreeNode result;
+        if (one != null && two != null){
+            if (one.getData().getProbOcc()<=two.getData().getProbOcc())
+                result = q1.dequeue();
+            else
+                result = q2.dequeue();
+        }
+        else if (one != null)
+            result = q1.dequeue();
+        else if (two != null)
+            result = q2.dequeue();
+        else
+            result = null;
+        return result;
+    }
+
+    public void makeTree(){
+
+        Queue<TreeNode> src= new Queue<>(), dest = new Queue<TreeNode>();
+        for(CharFreq CharFreq: sortedCharFreqList)
+            src.enqueue(new TreeNode(CharFreq, null, null));
+
+        TreeNode left, right;
+        while (!src.isEmpty()){
+            left = dequeue_smallest(src, dest);
+            right = dequeue_smallest(src, dest);
+            if (left != null && right != null){
+                TreeNode combined_node = combine_tree_nodes(left, right);
+                dest.enqueue(combined_node);
+            }
+            else if (left != null)
+                dest.enqueue(left);
+            else
+                dest.enqueue(right);
+        }
+        while (dest.size() > 1){
+            left = dest.dequeue();
+            right = dest.dequeue();
+            TreeNode combined_node = combine_tree_nodes(left, right);
+            dest.enqueue(combined_node);
+        }
+        huffmanRoot = dest.dequeue();
 
     }
+
+    public static TreeNode combine_tree_nodes(TreeNode left, TreeNode right){
+        double combined_freq = left.getData().getProbOcc() + right.getData().getProbOcc();
+        CharFreq combined_CharFreq_node = new CharFreq(null, combined_freq);
+        TreeNode combined_node = new TreeNode(combined_CharFreq_node, left, right);
+        return combined_node;
+    }
+
 
     /**
      * Uses huffmanRoot to create a string array of size 128, where each
@@ -92,32 +141,33 @@ public class HuffmanCoding {
      * Set encodings to this array.
      */
     public void makeEncodings() {
-
-
-	/* Your code goes here */
         String[] codes = new String[128];
         ArrayList<String> bits = new ArrayList<>();
-        preOrder(huffmanRoot, codes, bits);
+        beforeJacob(huffmanRoot, codes, bits);
         encodings = codes;
     }
 
-    private void preOrder(TreeNode huffmanRoot, String[] codes, ArrayList<String> bits) {
+    private void beforeJacob(TreeNode huffmanRoot, String[] codes, ArrayList<String> bits) {
         if(huffmanRoot.getData().getCharacter()!=null){
             codes[huffmanRoot.getData().getCharacter()]=String.join("", bits);
             bits.remove(bits.size()-1);
             return;
+
         }
-        if (huffmanRoot.getLeft()!=null){
+        if (huffmanRoot.getLeft() == null) {
+        } else {
             bits.add("0");
         }
-        preOrder(huffmanRoot.getLeft(), codes, bits);
-        if (huffmanRoot.getRight()!=null){
+        beforeJacob(huffmanRoot.getLeft(), codes, bits);
+        if (huffmanRoot.getRight() == null) {
+        } else {
             bits.add("1");
         }
-        preOrder(huffmanRoot.getRight(), codes, bits);
-        if (!bits.isEmpty()){
-            bits.remove(bits.size()-1);
+        beforeJacob(huffmanRoot.getRight(), codes, bits);
+        if (bits.isEmpty()) {
+            return;
         }
+        bits.remove(bits.size()-1);
     }
 
     /**
